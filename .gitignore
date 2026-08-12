@@ -24,6 +24,10 @@ _wake-triggers/
 __pycache__/
 *.pyc
 *.pyo
+*.egg-info/
+build/
+dist/
+.eggs/
 
 # OS
 .DS_Store
