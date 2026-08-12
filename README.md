@@ -61,6 +61,14 @@ docs/                 # 协议文档
 # 设置 KB_ROOT 环境变量指向你的知识库根目录
 export KB_ROOT=/path/to/your/knowledge-base
 
+# （可选）board-wake.py 通道 CLI 路径：默认自动探测常见安装位置，
+# 如需指向非标准路径，用以下环境变量显式指定：
+#   export WORKBUDDY_CLI=/path/to/codebuddy
+#   export CODEX_CLI=/path/to/codex
+#   export ANTIGRAVITY_CLI=/path/to/language_server
+#   export TRAE_CLI=/path/to/trae-solo-cn
+#   export QWENWORK_CLI=/path/to/qoderclicn
+
 # 创建一个任务
 python3 board/board-task-create.py \
   --id T01-hello \

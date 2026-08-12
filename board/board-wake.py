@@ -33,6 +33,8 @@
 # 权限（v1.4）：workbuddy 普通通道权限由前端 interactive 会话管理；urgent 的立即 CLI
 #   使用显式最小工具集，并与前台可见 automation 并行保留可追溯性。
 # 测试注入：BOARD_WAKE_KB 环境变量可覆盖 KB 根路径（临时 KB 回归，不动真实台账）
+# CLI 路径解析（v1.7）：优先环境变量（WORKBUDDY_CLI / CODEX_CLI / ANTIGRAVITY_CLI /
+#   TRAE_CLI / QWENWORK_CLI），未设置则探测常见安装路径，全部缺失时通道标记未就绪。
 
 import argparse, fcntl, json, os, re, subprocess, sys, time
 from datetime import datetime, timezone, timedelta
@@ -53,11 +55,43 @@ BOARD = KB / ".kb/board"
 PAUSED = KB / ".kb/board-wake.paused"
 WAKE_QUEUE = KB / ".kb/board/_wake-queue.jsonl"
 
-CODEBUDDY = "/Applications/WorkBuddy.app/Contents/Resources/app.asar.unpacked/cli/bin/codebuddy"
-CODEX = "/Applications/ChatGPT.app/Contents/Resources/codex"
-LANGSERVER = "/Applications/Antigravity.app/Contents/Resources/bin/language_server"
-TRAE = "/Applications/TRAE SOLO CN.app/Contents/Resources/app/bin/trae-solo-cn"
-QODER = "/Applications/QwenWorkCN.app/Contents/Resources/bin/qoderclicn"
+def _resolve_cli(env_var, *candidates):
+    """解析通道 CLI 可执行文件路径。
+
+    优先级：环境变量（显式配置，即便路径失效也如实返回，由调用方
+    os.path.exists 判定通道未就绪）> 探测常见安装路径 > 回落首个候选
+    （保持 os.path.exists 语义：全部缺失时通道标记 binary=False）。
+    """
+    env_path = os.environ.get(env_var, "").strip()
+    if env_path:
+        return env_path
+    for cand in candidates:
+        if os.path.exists(cand):
+            return cand
+    return candidates[0]
+
+CODEBUDDY = _resolve_cli(
+    "WORKBUDDY_CLI",
+    "/Applications/WorkBuddy.app/Contents/Resources/app.asar.unpacked/cli/bin/codebuddy",
+)
+CODEX = _resolve_cli(
+    "CODEX_CLI",
+    "/Applications/ChatGPT.app/Contents/Resources/codex",
+    "/usr/local/bin/codex",
+    "/opt/homebrew/bin/codex",
+)
+LANGSERVER = _resolve_cli(
+    "ANTIGRAVITY_CLI",
+    "/Applications/Antigravity.app/Contents/Resources/bin/language_server",
+)
+TRAE = _resolve_cli(
+    "TRAE_CLI",
+    "/Applications/TRAE SOLO CN.app/Contents/Resources/app/bin/trae-solo-cn",
+)
+QODER = _resolve_cli(
+    "QWENWORK_CLI",
+    "/Applications/QwenWorkCN.app/Contents/Resources/bin/qoderclicn",
+)
 
 # 只有实际由通道实现固定下来的模型才能用于 task-level review override。
 # 其他端若模型由前台会话动态选择，保持 None，不能靠猜测绕过精确模型门禁。
