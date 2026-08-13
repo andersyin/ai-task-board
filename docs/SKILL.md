@@ -214,6 +214,6 @@ QwenWork 有外部 CLI 与工作台内部定时任务两条通道。若 `qodercl
 
 ## 按需读取
 
-- 状态机、租约、角色锁、复杂度、告警和历史兼容：读 [完整协议参考](references/protocol.md)。
+- 状态机、租约、角色锁、复杂度、告警和历史兼容：读 [完整协议参考](protocol.md)。
 - 各端接入或刷新轮询提示词：运行 python3 .kb/board/board-setup.py --agent <端名>，不要复制旧 prompt。
 - 实现细节和唤醒通道：读 .kb/board/README.md。

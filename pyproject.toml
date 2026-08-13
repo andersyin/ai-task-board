@@ -25,7 +25,7 @@ classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
-    "Operating System :: OS Independent",
+    "Operating System :: POSIX",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
@@ -40,6 +40,12 @@ Homepage = "https://github.com/andersyin/ai-task-board"
 Repository = "https://github.com/andersyin/ai-task-board"
 Issues = "https://github.com/andersyin/ai-task-board/issues"
 
+[project.optional-dependencies]
+test = ["pytest"]
+
 [tool.setuptools]
 packages = ["board"]
 package-dir = {"" = "."}
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

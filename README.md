@@ -16,51 +16,31 @@
 ```
 board/                # 核心脚本（Python 3.9+，零外部依赖）
   board_contract.py          # 注册端、能力等级、状态枚举与原子写入的机器契约单源
-  board_task_contract.py     # v3 acceptance/output/evidence 合同校验与指纹绑定
-  board_verdicts.py          # PASS/FAIL 结论单源
-  board_transition.py        # 转换门禁、任务锁、事件 hash 链与 pending 前滚恢复
-  board_integrity.py         # 完整性检查
-  board_reconcile.py         # 历史任务 reconcile
-  board_reconcile_contract.py
-  board_replay.py            # 历史只读 replay/dry-run 与证据包导出
   board-task-create.py       # 创建任务
-  board-task-claim.py        # 原子认领
-  board-task-transition.py   # activate/submit/block/review/approve/requeue/cancel/... 统一 CLI
-  board-next-action.py       # 只读选择单一下一动作
-  board-audit.py             # 只读审计
-  board-validate.py          # 任务全生命周期校验
-  board-wake.py              # 唤醒路由器
-  board-setup.py             # 巡查端定时任务安装
-  board-dashboard.py         # 仪表盘
-  board-alert.py             # 告警
-  board-callback.py          # 回调
-  board-delivery.py          # 产物交付
-  board-family.py            # 模型家族
-  board-index-gen.py         # 索引投影
-  board-lease-check.py       # 租约检查
-  board-maintenance.py       # 巡查端唯一显式持久化入口
-  board-review-escalate.py   # 验收超时自动升级
-  board-reconcile-history.py
-  board-replay.py            # CLI replay
-  board-retrofill-review.py
-  board-indirect-verify.py
-  project-delivery-tracker.py
-  trae-wake-proxy.py
-  auto-exec-gate.py
-  board-lease-check-runner.sh
-  README.md                  # 公告牌详细文档
+  board-task-claim.py        # 原子认领（唯一入口；不是 transition 的 action）
+  board-task-transition.py   # activate/submit/block/review/approve/... 统一 CLI
+  templates/REVIEW.md        # 验收报告模板（review 前复制到任务目录并填字段）
+  README.md                  # 公告牌详细文档与完整脚本清单
 
 docs/                 # 协议文档
   SKILL.md                   # Skill 入口（各 AI Agent 通过 skill-sync 同步）
-  protocol.md                # 完整任务流转协议 v2.1
+  protocol.md                # 完整任务流转协议
+
+tests/                # pytest（契约 + 隔离目录下的 create/claim/submit/review）
+examples/             # 任务卡模板与完整生命周期命令
 ```
+
+完整脚本清单见 `board/README.md`。
 
 ## 快速开始
 
-```bash
-# 设置 KB_ROOT 环境变量指向你的知识库根目录
-export KB_ROOT=/path/to/your/knowledge-base
+克隆后，**默认把本仓库的 `board/` 当作公告牌根目录**（任务写在 `board/tasks/`，已 gitignore）。`--board-root` 可指向任意空目录做隔离实验。
 
+`KB_ROOT` **不是** create/claim/transition 的输入。只有把脚本装进 `$KB_ROOT/.kb/board` 时，唤醒路由 `board-wake.py` 和 `board-lease-check-runner.sh` 才读取它（也可用 `BOARD_WAKE_KB` 覆盖）。
+
+需要 Python 3.9+。文件锁使用 `fcntl`，面向 POSIX（macOS / Linux）。
+
+```bash
 # （可选）board-wake.py 通道 CLI 路径：默认自动探测常见安装位置，
 # 如需指向非标准路径，用以下环境变量显式指定：
 #   export WORKBUDDY_CLI=/path/to/codebuddy
@@ -69,25 +49,40 @@ export KB_ROOT=/path/to/your/knowledge-base
 #   export TRAE_CLI=/path/to/trae-solo-cn
 #   export QWENWORK_CLI=/path/to/qoderclicn
 
-# 创建一个任务
+# 1. 创建任务（created-by 必须是已注册端；v3 必填 work-key / acceptance / output / evidence / body）
+#    created-by 不在 required-caps 里算跨端委托，必须声明 --delivery
 python3 board/board-task-create.py \
   --id T01-hello \
   --title "示例任务" \
-  --work-key your-agent \
+  --work-key demo-hello \
+  --required-caps scheduled-task \
+  --created-by trae \
+  --complexity L1 \
+  --delivery return_result \
   --acceptance "产物存在且可读" \
-  --output "output/result.txt"
+  --output "output/result.txt" \
+  --evidence "cat output/result.txt" \
+  --body "写一个可读的示例产物。"
 
-# 认领任务
-python3 board/board-task-transition.py --task T01-hello --action claim --agent your-agent
+# 2. 原子认领（独立脚本；--model 禁止 auto/unknown）
+python3 board/board-task-claim.py \
+  --task T01-hello --agent workbuddy --model deepseek-v4-flash
 
-# 提交产物
+# 3. 执行端署名进度并交出产物，再 submit（--actor 不是 --agent）
+#    在 board/tasks/T01-hello/PROGRESS.md 写入一行：
+#    [workbuddy/deepseek-v4-flash] 已交付 output/result.txt
 python3 board/board-task-transition.py --task T01-hello --action submit \
-  --agent your-agent --request-id req-001
+  --actor workbuddy --model deepseek-v4-flash --request-id req-001 \
+  --output-ref output/result.txt --evidence-ref cat:output/result.txt
 
-# 验收（另一个 agent）
+# 4. 另一个注册端验收：先按 board/templates/REVIEW.md 填写任务目录下的 REVIEW.md
+#    必填顶格字段：验收端 / 验收结果 / 合同指纹（从 card.md 复制）
 python3 board/board-task-transition.py --task T01-hello --action review \
-  --agent reviewer-agent --verdict PASS --request-id req-002
+  --actor trae --model glm-5.2 --request-id req-002 \
+  --result pass --issues 0
 ```
+
+隔离实验时给每个命令加上 `--board-root /tmp/my-board`（create 会自动建 `tasks/`）。完整字段示例见 `examples/README.md`。
 
 ## 注册端
 
@@ -109,7 +104,7 @@ python3 board/board-task-transition.py --task T01-hello --action review \
 - **零外部依赖**：纯 Python 3.9+ 标准库
 - **文件系统即数据库**：无需 SQLite/PostgreSQL，`json` + `jsonl` + `md`
 - **hash 链事件账本**：append-only `events.jsonl`，每条事件含前一条的 hash，可回放验证
-- **文件锁**：`fcntl.flock` 实现原子操作，多进程安全
+- **文件锁**：`fcntl.flock` 实现原子操作，多进程安全（POSIX）
 - **幂等转换**：同一 request-id + 同参数重试幂等成功；不同参数硬拒绝
 - **能力等级**：L1-L4 执行/验收等级，高等级可验收低等级，反之不可
 - **DLQ 死信队列**：多次失败的任务进入 DLQ，不再自动重投，等待人工裁决
