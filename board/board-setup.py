@@ -71,14 +71,14 @@ AGENT_PROFILES = {
         "cli": [
             "codebuddy --model <model> --print '<prompt>'",
         ],
-        "roles": ["L1/L2/L3执行", "L1/L2验收", "内部异模型验收"],
+        "roles": ["L1/L2/L3执行", "L1/L2/L3验收", "内部异模型验收"],
         "limitations": [
             "rrule 需特定格式（FREQ=HOURLY;INTERVAL=1;BYDAY=MO,TU,WE,TH,FR,SA,SU）",
             "valid_from/valid_until 用 .000Z UTC 格式",
         ],
         "model_families": ["deepseek", "kimi", "glm", "minimax"],
         "max_execute_level": "L3",
-        "max_review_level": "L2",
+        "max_review_level": "L3",
         "internal_hetero_model": True,
         "setup_type": "automation_db",
         "setup_steps": [

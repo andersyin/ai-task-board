@@ -8,6 +8,7 @@
 git clone https://github.com/andersyin/ai-task-board.git
 cd ai-task-board
 pip install pytest
+# or: pip install -e ".[test]"
 ```
 
 ## 代码规范
@@ -21,11 +22,12 @@ pip install pytest
 ## 测试
 
 ```bash
-# 运行所有测试
+# 运行所有测试（契约 + 隔离目录下的真实 create/claim/submit/review）
 pytest tests/ -v
 
 # 运行单个测试文件
 pytest tests/test_contract.py -v
+pytest tests/test_lifecycle.py -v
 ```
 
 提交前确保所有测试通过。

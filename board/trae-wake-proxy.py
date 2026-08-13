@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""[已归档·文档用途] Trae wake proxy — 已被本地 shell 脚本替代。
+r"""[已归档·文档用途] Trae wake proxy — 已被本地 shell 脚本替代。
 
 实际使用的代理脚本：~/Library/Application Support/trae-wake/trae-wake-proxy.sh
 触发目录：~/Library/Application Support/trae-wake/triggers/

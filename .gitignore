@@ -28,6 +28,7 @@ __pycache__/
 build/
 dist/
 .eggs/
+.pytest_cache/
 
 # OS
 .DS_Store

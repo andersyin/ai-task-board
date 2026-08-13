@@ -42,33 +42,45 @@
 
 ## 完整生命周期示例
 
+认领走 `board-task-claim.py`，其余状态变化走 `board-task-transition.py`（用 `--actor` 和 `--result pass|fail`，不要把认领当成 transition action）。`submit` 前必须有署名 `PROGRESS.md`；`review` 前必须有顶格字段的 `REVIEW.md`。模板见 `board/templates/REVIEW.md`。
+
+隔离实验时给每条命令加上 `--board-root /tmp/my-board`。
+
 ```bash
-# 1. 创建
+# 1. 创建（v3 必填 work-key / acceptance / output / evidence / body / created-by / required-caps）
+#    created-by 不在 required-caps 里算跨端委托，必须声明 --delivery
 python3 board/board-task-create.py \
   --id T01-demo \
   --title "示例：生成报告" \
-  --work-key analytics \
+  --work-key analytics-demo \
+  --required-caps scheduled-task \
   --acceptance "report.md 存在且 >100 字" \
   --output "report.md" \
   --evidence "wc -w report.md > 100" \
   --complexity L2 \
-  --created-by trae
+  --created-by trae \
+  --delivery return_result \
+  --body "生成一份可读的示例报告。"
 
-# 2. 认领（某个 agent）
-python3 board/board-task-transition.py --task T01-demo --action claim --agent workbuddy
+# 2. 原子认领（某个 agent；--model 禁止 auto/unknown）
+python3 board/board-task-claim.py \
+  --task T01-demo --agent workbuddy --model deepseek-v4-flash
 
-# 3. 执行完毕，提交
+# 3. 执行完毕：写 PROGRESS.md（含 [workbuddy/deepseek-v4-flash] 署名）再提交
 python3 board/board-task-transition.py --task T01-demo --action submit \
-  --agent workbuddy --request-id req-001
+  --actor workbuddy --model deepseek-v4-flash --request-id req-001 \
+  --output-ref report.md --evidence-ref "wc -w report.md"
 
-# 4. 另一个 agent 验收
+# 4. 另一个注册端验收：先填写 REVIEW.md（验收端 / 验收结果 / 合同指纹），再 review
 python3 board/board-task-transition.py --task T01-demo --action review \
-  --agent codex --verdict PASS --request-id req-002
+  --actor trae --model glm-5.2 --request-id req-002 \
+  --result pass --issues 0
 
 # 5. 审计确认
 python3 board/board-audit.py
 
-# 6. 归档
+# 6. 归档只能由 user 终批
 python3 board/board-task-transition.py --task T01-demo --action archive \
-  --agent codex --request-id req-003
+  --actor user --model human --request-id req-003 \
+  --approval-evidence "user confirmed demo complete"
 ```

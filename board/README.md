@@ -2,7 +2,11 @@
 
 > 状态：Phase 1 forward-correctness v3（2026-08-11；完整性隔离、工作身份、冻结合同、完整生命周期、交互/巡查分流、只读审计）
 > 治理升级 2026-08-12：workbuddy 验收 L3 + 验收冗余校验 + 超时自动升级 + 过时检测 + submit fail-fast（见下「2026-08-12 治理」节）
-> 协议入口：`raw/skills/效率工具/task-flow/SKILL.md`（各端通过 skill-sync-all.sh 同步）
+> 协议入口：本仓库 `docs/SKILL.md`（知识库内部通过 skill-sync-all.sh 同步到各端）
+>
+> **Standalone clone：** 本目录即默认 `--board-root`。create/claim/transition **不读** `KB_ROOT`。
+> 只有把脚本装进 `$KB_ROOT/.kb/board` 时，`board-wake.py` / `board-lease-check-runner.sh` 才使用 `KB_ROOT`（可用 `BOARD_WAKE_KB` 覆盖）。
+> 验收报告模板：`templates/REVIEW.md`。
 
 ## 目录结构
 
@@ -25,6 +29,7 @@
 - `tasks/<id>/PROGRESS.md` / `BLOCKED.md` —— 执行端进度与待裁决清单（执行端写）
 - `tasks/<id>/events.jsonl` —— append-only 事件账本；新任务从 create 完整可回放，旧任务从首次 bootstrap 起部分可回放
 - `tasks/<id>/.transition-pending.json` —— 崩溃恢复 journal；正常完成后不存在
+- `templates/REVIEW.md` —— 验收报告模板；review 前复制到任务目录并填顶格字段
 - `intents/` —— 认领意图投递箱（各端只写自己名下文件 `<端名>-<taskid>.md`）
 - `experimental/` —— 心跳区（各端只写自己名下 `<端名>-heartbeat.md`）
 - `board-wake.py` —— 唤醒路由器 v1.0（#HO-076，确定性脚本，值班端调用，AI 不手写唤醒逻辑）
